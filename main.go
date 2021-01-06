@@ -31,7 +31,7 @@ var config = struct {
 	InfluxBucket       string `env:"INFLUX_BUCKET" flag:"influx-bucket" desc:"InfluxDB bucket, set to database/retention-policy or database for InfluxDB 1.8"`
 	MeasurementName    string `env:"MEASUREMENT_NAME" flag:"measurement-name" desc:"InfluxDB measurement name"`
 }{
-	Addr: ":62718",
+	Addr: ":9108",
 
 	InfluxAddr:      "http://localhost:8086",
 	InfluxBucket:    "weather",
