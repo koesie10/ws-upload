@@ -3,12 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
-	"time"
 
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/koesie10/pflagenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -23,17 +22,15 @@ var config = struct {
 
 	StationPassword string `env:"STATION_PASSWORD" flag:"station-password,p" desc:"the station password that will be accepted"`
 
-	InfluxAddr         string `env:"INFLUX_ADDR" flag:"influx-addr" desc:"InfluxDB HTTP address"`
-	InfluxAuthToken    string `env:"INFLUX_AUTH_TOKEN" flag:"influx-auth-token" desc:"InfluxDB auth token, use username:password for InfluxDB 1.8"`
-	InfluxOrganization string `env:"INFLUX_ORGANIZATION" flag:"influx-organization" desc:"InfluxDB organization, do not set if using InfluxDB 1.8"`
-	InfluxBucket       string `env:"INFLUX_BUCKET" flag:"influx-bucket" desc:"InfluxDB bucket, set to database/retention-policy or database for InfluxDB 1.8"`
-	MeasurementName    string `env:"MEASUREMENT_NAME" flag:"measurement-name" desc:"InfluxDB measurement name"`
+	Influx influx.PublisherOptions `env:",squash"`
 }{
 	Addr: ":9108",
 
-	InfluxAddr:      "http://localhost:8086",
-	InfluxBucket:    "weather",
-	MeasurementName: "weather",
+	Influx: influx.PublisherOptions{
+		Addr:            "http://localhost:8086",
+		Bucket:          "weather",
+		MeasurementName: "weather",
+	},
 }
 
 func main() {
@@ -67,12 +64,16 @@ func run() error {
 		logrus.Infof("Station password is %s, please set it using the STATION_PASSWORD environment variable or the --station-password/-p flag", config.StationPassword)
 	}
 
-	options := influxdb2.DefaultOptions()
-	options.SetPrecision(time.Second)
-	client := influxdb2.NewClientWithOptions(config.InfluxAddr, config.InfluxAuthToken, options)
-	defer client.Close()
+	var publishers []wsupload.Publisher
 
-	writeAPI := client.WriteAPI(config.InfluxOrganization, config.InfluxBucket)
+	if config.Influx.Addr != "" {
+		publisher, err := influx.NewPublisher(config.Influx)
+		if err != nil {
+			return fmt.Errorf("failed to create influx publisher: %w", err)
+		}
+		defer publisher.Close()
+		publishers = append(publishers, publisher)
+	}
 
 	l, err := net.Listen("tcp", config.Addr)
 	if err != nil {
@@ -111,13 +112,11 @@ func run() error {
 			return err
 		}
 
-		point, err := influx.CreatePoint(obs, config.MeasurementName)
-		if err != nil {
-			entry.WithError(err).Error("Failed to convert to point")
-			return err
+		for _, publisher := range publishers {
+			if err := publisher.Publish(obs); err != nil {
+				logrus.WithError(err).Errorf("Failed to publish")
+			}
 		}
-
-		writeAPI.WritePoint(point)
 
 		return c.String(http.StatusOK, "OK")
 	})
