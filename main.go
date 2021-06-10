@@ -140,6 +140,11 @@ func run() error {
 			return c.String(http.StatusBadRequest, "Invalid action")
 		}
 
+		if c.QueryParam("tempf") == "-9999" {
+			entry.Errorf("Missing outside data")
+			return c.String(http.StatusOK, "OK")
+		}
+
 		obs, err := wsupload.Parse(c.QueryParams(), logrus.WithField("", ""))
 		if err != nil {
 			entry.WithError(err).Errorf("Failed to parse observation")
