@@ -53,13 +53,19 @@ func main() {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetOutput(os.Stdout)
 
-	flagSet := pflag.NewFlagSet("ws-upload", pflag.ExitOnError)
+	flagSet := pflag.NewFlagSet("ws-upload", pflag.ContinueOnError)
 
 	if err := pflagenv.Setup(flagSet, &config); err != nil {
 		logrus.Fatal(err)
 	}
 
 	if err := pflagenv.Parse(&config); err != nil {
+		logrus.Fatal(err)
+	}
+
+	if err := flagSet.Parse(os.Args); err == pflag.ErrHelp {
+		return
+	} else if err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -144,6 +150,14 @@ func run() error {
 			if err := publisher.Publish(obs); err != nil {
 				logrus.WithError(err).Errorf("Failed to publish")
 			}
+		}
+
+		return c.String(http.StatusOK, "OK")
+	})
+
+	e.POST("/api/v1/mqtt/homeassistant/delete-all-devices", func(c echo.Context) error {
+		if err := mqtt.DeleteAllDevices(config.MQTT); err != nil {
+			return err
 		}
 
 		return c.String(http.StatusOK, "OK")
