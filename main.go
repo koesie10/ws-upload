@@ -10,6 +10,7 @@ import (
 
 	"github.com/koesie10/pflagenv"
 	"github.com/koesie10/ws-upload/influx"
+	"github.com/koesie10/ws-upload/mqtt"
 	"github.com/koesie10/ws-upload/wsupload"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -23,6 +24,7 @@ var config = struct {
 	StationPassword string `env:"STATION_PASSWORD" flag:"station-password,p" desc:"the station password that will be accepted"`
 
 	Influx influx.PublisherOptions `env:",squash"`
+	MQTT   mqtt.PublisherOptions   `env:",squash"`
 }{
 	Addr: ":9108",
 
@@ -30,6 +32,10 @@ var config = struct {
 		Addr:            "http://localhost:8086",
 		Bucket:          "weather",
 		MeasurementName: "weather",
+	},
+
+	MQTT: mqtt.PublisherOptions{
+		Brokers: []string{"tcp://127.0.0.1:1883"},
 	},
 }
 
@@ -69,12 +75,23 @@ func run() error {
 	if config.Influx.Addr != "" {
 		publisher, err := influx.NewPublisher(config.Influx)
 		if err != nil {
-			return fmt.Errorf("failed to create influx publisher: %w", err)
+			return fmt.Errorf("failed to create Influx publisher: %w", err)
 		}
 		defer publisher.Close()
 		publishers = append(publishers, publisher)
 
 		logrus.Info("Influx publisher enabled")
+	}
+
+	if len(config.MQTT.Brokers) > 0 {
+		publisher, err := mqtt.NewPublisher(config.MQTT)
+		if err != nil {
+			return fmt.Errorf("failed to create MQTT publisher: %w", err)
+		}
+		defer publisher.Close()
+		publishers = append(publishers, publisher)
+
+		logrus.Info("MQTT publisher enabled")
 	}
 
 	l, err := net.Listen("tcp", config.Addr)
