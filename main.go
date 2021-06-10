@@ -36,6 +36,13 @@ var config = struct {
 
 	MQTT: mqtt.PublisherOptions{
 		Brokers: []string{"tcp://127.0.0.1:1883"},
+		Topic:   "homeassistant/sensor/sensorWeatherStation/state",
+		HomeAssistant: mqtt.HomeAssistantOptions{
+			DiscoveryEnabled: true,
+			DiscoveryQoS:     1, // At least once
+			DiscoveryPrefix:  "homeassistant",
+			DevicePrefix:     "weatherstation_",
+		},
 	},
 }
 
