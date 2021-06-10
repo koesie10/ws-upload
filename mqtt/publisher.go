@@ -129,14 +129,16 @@ func (p *publisher) watchdog() {
 		logrus.Warnf("Failed to publish discovery message")
 	}
 
-	select {
-	case <-p.done:
-		p.client.Disconnect(250)
+	for {
+		select {
+		case <-p.done:
+			p.client.Disconnect(250)
 
-		return
-	case <-t.C:
-		if err := p.publishDiscovery(); err != nil {
-			logrus.Warnf("Failed to publish discovery message")
+			return
+		case <-t.C:
+			if err := p.publishDiscovery(); err != nil {
+				logrus.Warnf("Failed to publish discovery message")
+			}
 		}
 	}
 }

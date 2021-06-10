@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/koesie10/pflagenv"
 	"github.com/koesie10/ws-upload/influx"
@@ -38,10 +39,11 @@ var config = struct {
 		Brokers: []string{"tcp://127.0.0.1:1883"},
 		Topic:   "homeassistant/sensor/sensorWeatherStation/state",
 		HomeAssistant: mqtt.HomeAssistantOptions{
-			DiscoveryEnabled: true,
-			DiscoveryQoS:     1, // At least once
-			DiscoveryPrefix:  "homeassistant",
-			DevicePrefix:     "weatherstation_",
+			DiscoveryEnabled:  true,
+			DiscoveryInterval: 30 * time.Second,
+			DiscoveryQoS:      1, // At least once
+			DiscoveryPrefix:   "homeassistant",
+			DevicePrefix:      "weatherstation_",
 		},
 	},
 }
