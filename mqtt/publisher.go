@@ -121,6 +121,7 @@ func (p *publisher) watchdog() {
 	}
 
 	t := time.NewTicker(discoveryInterval)
+	defer t.Stop()
 
 	logrus.Infof("Connected to MQTT broker")
 

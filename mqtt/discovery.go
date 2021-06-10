@@ -53,7 +53,7 @@ func (p *publisher) publishDiscovery() error {
 			StateTopic:        p.options.Topic,
 			StateClass:        options["state_class"],
 			UnitOfMeasurement: options["unit_of_measurement"],
-			ValueTemplate:     fmt.Sprintf("{{ value.%s }}", jsonTag.Name),
+			ValueTemplate:     fmt.Sprintf("{{ value_json.%s }}", jsonTag.Name),
 		}
 
 		topic := fmt.Sprintf("%s/sensor/%s%s/config", p.options.HomeAssistant.DiscoveryPrefix, p.options.HomeAssistant.DevicePrefix, jsonTag.Name)
