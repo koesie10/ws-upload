@@ -11,6 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type homeAssistantDevice struct {
+	Identifiers  []string `json:"identifiers,omitempty"`
+	Manufacturer string   `json:"manufacturer,omitempty"`
+	Model        string   `json:"model,omitempty"`
+	Name         string   `json:"name,omitempty"`
+}
+
 type homeAssistantConfig struct {
 	DeviceClass       string `json:"device_class,omitempty"`
 	Name              string `json:"name"`
@@ -18,6 +25,9 @@ type homeAssistantConfig struct {
 	StateClass        string `json:"state_class,omitempty"`
 	UnitOfMeasurement string `json:"unit_of_measurement,omitempty"`
 	ValueTemplate     string `json:"value_template"`
+
+	UniqueID string              `json:"unique_id,omitempty"`
+	Device   homeAssistantDevice `json:"device"`
 }
 
 func (p *publisher) publishDiscovery() error {
@@ -26,6 +36,13 @@ func (p *publisher) publishDiscovery() error {
 	}
 
 	reflectType := reflect.TypeOf(wsupload.Observation{})
+
+	device := homeAssistantDevice{
+		Identifiers:  p.options.HomeAssistant.DeviceIdentifiers,
+		Manufacturer: p.options.HomeAssistant.DeviceManufacturer,
+		Model:        p.options.HomeAssistant.DeviceModel,
+		Name:         p.options.HomeAssistant.DeviceName,
+	}
 
 	for i := 0; i < reflectType.NumField(); i++ {
 		field := reflectType.Field(i)
@@ -54,6 +71,9 @@ func (p *publisher) publishDiscovery() error {
 			StateClass:        options["state_class"],
 			UnitOfMeasurement: options["unit_of_measurement"],
 			ValueTemplate:     fmt.Sprintf("{{ value_json.%s }}", jsonTag.Name),
+
+			UniqueID: fmt.Sprintf("%s%s", p.options.HomeAssistant.UniqueIDPrefix, jsonTag.Name),
+			Device:   device,
 		}
 
 		topic := fmt.Sprintf("%s/sensor/%s%s/config", p.options.HomeAssistant.DiscoveryPrefix, p.options.HomeAssistant.DevicePrefix, jsonTag.Name)
