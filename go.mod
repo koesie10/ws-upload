@@ -1,4 +1,4 @@
-module ws-upload
+module github.com/koesie10/ws-upload
 
 go 1.15
 

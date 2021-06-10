@@ -8,8 +8,8 @@ import (
 	"github.com/fatih/structtag"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
-	"ws-upload/wsupload"
-	"ws-upload/x"
+	"github.com/koesie10/ws-upload/wsupload"
+	"github.com/koesie10/ws-upload/x"
 )
 
 func CreatePoint(obs *wsupload.Observation, measurementName string) (*write.Point, error) {

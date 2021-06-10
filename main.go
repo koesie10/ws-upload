@@ -9,12 +9,12 @@ import (
 	"os"
 
 	"github.com/koesie10/pflagenv"
+	"github.com/koesie10/ws-upload/influx"
+	"github.com/koesie10/ws-upload/wsupload"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
-	"ws-upload/influx"
-	"ws-upload/wsupload"
 )
 
 var config = struct {
@@ -73,6 +73,8 @@ func run() error {
 		}
 		defer publisher.Close()
 		publishers = append(publishers, publisher)
+
+		logrus.Info("Influx publisher enabled")
 	}
 
 	l, err := net.Listen("tcp", config.Addr)

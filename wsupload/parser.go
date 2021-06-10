@@ -9,7 +9,7 @@ import (
 
 	"github.com/fatih/structtag"
 	"github.com/sirupsen/logrus"
-	"ws-upload/x"
+	"github.com/koesie10/ws-upload/x"
 )
 
 var timeType = reflect.TypeOf(time.Time{})

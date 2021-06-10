@@ -6,7 +6,7 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
-	"ws-upload/wsupload"
+	"github.com/koesie10/ws-upload/wsupload"
 )
 
 var _ wsupload.Publisher = (*publisher)(nil)
