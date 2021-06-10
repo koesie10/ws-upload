@@ -83,10 +83,10 @@ type HomeAssistantOptions struct {
 	DevicePrefix      string        `env:"MQTT_HOMEASSISTANT_DEVICE_PREFIX" flag:"device-prefix" desc:"HomeAssistant device prefix"`
 
 	UniqueIDPrefix     string   `env:"MQTT_HOMEASSISTANT_UNIQUE_ID_PREFIX" flag:"unique-id" desc:"HomeAssistant unique ID prefix"`
-	DeviceIdentifiers  []string `en:"MQTT_HOMEASSISTANT_DEVICE_IDENTIFIERS" flag:"device-identifiers" desc:"HomeAssistant identifiers"`
-	DeviceManufacturer string   `en:"MQTT_HOMEASSISTANT_DEVICE_MANUFACTURER" flag:"device-manufacturer" desc:"HomeAssistant manufacturer"`
-	DeviceModel        string   `en:"MQTT_HOMEASSISTANT_DEVICE_MODEL" flag:"device-model" desc:"HomeAssistant model"`
-	DeviceName         string   `en:"MQTT_HOMEASSISTANT_DEVICE_NAME" flag:"device-name" desc:"HomeAssistant name"`
+	DeviceIdentifiers  []string `env:"MQTT_HOMEASSISTANT_DEVICE_IDENTIFIERS" flag:"device-identifiers" desc:"HomeAssistant identifiers"`
+	DeviceManufacturer string   `env:"MQTT_HOMEASSISTANT_DEVICE_MANUFACTURER" flag:"device-manufacturer" desc:"HomeAssistant manufacturer"`
+	DeviceModel        string   `env:"MQTT_HOMEASSISTANT_DEVICE_MODEL" flag:"device-model" desc:"HomeAssistant model"`
+	DeviceName         string   `env:"MQTT_HOMEASSISTANT_DEVICE_NAME" flag:"device-name" desc:"HomeAssistant name"`
 }
 
 func (p *publisher) Publish(obs *wsupload.Observation) error {
