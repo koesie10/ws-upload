@@ -8,17 +8,21 @@ import (
 	"time"
 
 	"github.com/fatih/structtag"
-	"github.com/sirupsen/logrus"
 	"github.com/koesie10/ws-upload/x"
+	"github.com/sirupsen/logrus"
 )
 
 var timeType = reflect.TypeOf(time.Time{})
+var nullFloat64Type = reflect.TypeOf(NullFloat64{})
+var nullInt64Type = reflect.TypeOf(NullInt64{})
 
 func Parse(params url.Values, entry *logrus.Entry) (*Observation, error) {
 	obs := Observation{}
 
 	v := reflect.ValueOf(&obs)
 	reflectValue := v.Elem()
+
+	var optional bool
 
 	for i := 0; i < reflectValue.NumField(); i++ {
 		fieldValue := reflectValue.Field(i)
@@ -45,37 +49,9 @@ func Parse(params url.Values, entry *logrus.Entry) (*Observation, error) {
 				return nil
 			}
 		case reflect.Float64:
-			conversion, ok := options["conversion"]
-
-			var transformFunc func (value float64) float64
-
-			if ok {
-				switch conversion {
-				case "fahrenheit_to_celsius":
-					transformFunc = func(fahrenheit float64) float64 {
-						return (fahrenheit - 32.0) * 5.0 / 9.0
-					}
-				case "inches_of_mercury_to_pascal":
-					transformFunc = func(inHg float64) float64 {
-						return inHg * 3386
-					}
-				case "mph_to_meters_per_second":
-					transformFunc = func(mph float64) float64 {
-						return mph * 0.44704
-					}
-				case "inches_of_rain_to_millimeter":
-					transformFunc = func(inRain float64) float64 {
-						return inRain * 25.4
-					}
-				default:
-					return nil, fmt.Errorf("unsupported conversion %s for %s")
-				}
-
-				delete(options, "conversion")
-			} else {
-				transformFunc = func(value float64) float64 {
-					return value
-				}
+			transformFunc, err := getConversionTransformFunc(options)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get conversion transform func for %s: %w", field.Name, err)
 			}
 
 			setFunc = func(value string, fieldValue reflect.Value) error {
@@ -129,6 +105,47 @@ func Parse(params url.Values, entry *logrus.Entry) (*Observation, error) {
 
 					return nil
 				}
+			} else if field.Type.AssignableTo(nullFloat64Type) {
+				optional = true
+
+				transformFunc, err := getConversionTransformFunc(options)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get conversion transform func for %s: %w", field.Name, err)
+				}
+
+				setFunc = func(value string, fieldValue reflect.Value) error {
+					if value == "-9999" {
+						fieldValue.Set(reflect.ValueOf(NullFloat64{Valid: false}))
+						return nil
+					}
+
+					v, err := strconv.ParseFloat(value, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse value: %w", err)
+					}
+
+					fieldValue.Set(reflect.ValueOf(NullFloat64{Valid: true, Float64: transformFunc(v)}))
+
+					return nil
+				}
+			} else if field.Type.AssignableTo(nullInt64Type) {
+				optional = true
+
+				setFunc = func(value string, fieldValue reflect.Value) error {
+					if value == "-9999" {
+						fieldValue.Set(reflect.ValueOf(NullInt64{Valid: false}))
+						return nil
+					}
+
+					v, err := strconv.ParseInt(value, 10, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse value: %w", err)
+					}
+
+					fieldValue.Set(reflect.ValueOf(NullInt64{Valid: true, Int64: v}))
+
+					return nil
+				}
 			}
 		}
 
@@ -142,7 +159,12 @@ func Parse(params url.Values, entry *logrus.Entry) (*Observation, error) {
 
 		queryValue := params.Get(wsTag.Name)
 		if queryValue == "" {
-			entry.Warnf("Missing query param '%s' for field '%s'", wsTag.Name, field.Name)
+			var level = logrus.WarnLevel
+			if optional {
+				level = logrus.DebugLevel
+			}
+
+			entry.Logf(level, "Missing query param '%s' for field '%s'", wsTag.Name, field.Name)
 			continue
 		}
 

@@ -22,7 +22,8 @@ func CreatePoint(obs *wsupload.Observation, measurementName string) (*write.Poin
 	reflectValue := v.Elem()
 
 	for i := 0; i < reflectValue.NumField(); i++ {
-		fieldValue := reflectValue.Field(i)
+		fieldValueType := reflectValue.Field(i)
+		fieldValue := fieldValueType.Interface()
 		field := reflectValue.Type().Field(i)
 
 		tag, err := structtag.Parse(string(field.Tag))
@@ -38,7 +39,7 @@ func CreatePoint(obs *wsupload.Observation, measurementName string) (*write.Poin
 				return nil, fmt.Errorf("multiple timestamps found for %s", field.Name)
 			}
 
-			ts = fieldValue.Interface().(time.Time)
+			ts = fieldValue.(time.Time)
 
 			continue
 		}
@@ -59,11 +60,19 @@ func CreatePoint(obs *wsupload.Observation, measurementName string) (*write.Poin
 		}
 
 		if _, ok := options["tag"]; ok {
-			tags[fieldName] = fieldValue.String()
+			tags[fieldName] = fieldValueType.String()
 			continue
 		}
 
-		fields[fieldName] = fieldValue.Interface()
+		if v, ok := fieldValue.(wsupload.Nullable); ok {
+			if v.IsNull() {
+				continue
+			}
+
+			fieldValue = v.Value()
+		}
+
+		fields[fieldName] = fieldValue
 	}
 
 	if ts.IsZero() {

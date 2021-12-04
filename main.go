@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"github.com/koesie10/ws-upload/jsondebug"
 	"net"
 	"net/http"
 	"os"
@@ -26,6 +27,9 @@ var config = struct {
 
 	Influx influx.PublisherOptions `env:",squash"`
 	MQTT   mqtt.PublisherOptions   `env:",squash"`
+
+	EnableJSONDebug   bool `env:"ENABLE_JSON_DEBUG" flag:"enable-json-debug" desc:"enable json debug output"`
+	EnableInfluxDebug bool `env:"ENABLE_INFLUX_DEBUG" flag:"enable-influx-debug" desc:"enable influx debug output"`
 }{
 	Addr: ":9108",
 
@@ -87,6 +91,17 @@ func run() error {
 
 	var publishers []wsupload.Publisher
 
+	if config.EnableJSONDebug {
+		publisher, err := jsondebug.NewDebugPublisher()
+		if err != nil {
+			return fmt.Errorf("failed to create JSON debug publisher: %w", err)
+		}
+		defer publisher.Close()
+		publishers = append(publishers, publisher)
+
+		logrus.Info("JSON debug publisher enabled")
+	}
+
 	if config.Influx.Addr != "" {
 		publisher, err := influx.NewPublisher(config.Influx)
 		if err != nil {
@@ -96,6 +111,19 @@ func run() error {
 		publishers = append(publishers, publisher)
 
 		logrus.Info("Influx publisher enabled")
+	}
+
+	if config.EnableInfluxDebug {
+		publisher, err := influx.NewDebugPublisher(influx.DebugPublisherOptions{
+			MeasurementName: "weather",
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create Influx debug publisher: %w", err)
+		}
+		defer publisher.Close()
+		publishers = append(publishers, publisher)
+
+		logrus.Info("Influx debug publisher enabled")
 	}
 
 	if len(config.MQTT.Brokers) > 0 {
@@ -140,15 +168,15 @@ func run() error {
 			return c.String(http.StatusBadRequest, "Invalid action")
 		}
 
-		if c.QueryParam("tempf") == "-9999" {
-			entry.Errorf("Missing outside data")
-			return c.String(http.StatusOK, "OK")
-		}
-
-		obs, err := wsupload.Parse(c.QueryParams(), logrus.WithField("", ""))
+		obs, err := wsupload.Parse(c.QueryParams(), entry)
 		if err != nil {
 			entry.WithError(err).Errorf("Failed to parse observation")
 			return err
+		}
+
+		if !obs.IndoorTemperatureCelsius.Valid || obs.IndoorTemperatureCelsius.Float64 < -50 || obs.IndoorTemperatureCelsius.Float64 > 80 {
+			entry.Errorf("Invalid indoor temperature")
+			return c.String(http.StatusOK, "OK")
 		}
 
 		for _, publisher := range publishers {
