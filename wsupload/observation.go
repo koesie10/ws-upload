@@ -23,8 +23,8 @@ type Observation struct {
 	SolarRadiationWattPerMeterSquared NullFloat64 `ws:"solarradiation" json:"solar_radiation_watt_per_meter_squared" homeassistant:"Solar radiation,state_class=measurement,unit_of_measurement=W/m^2"`
 
 	WindDirectionDegrees     NullInt64   `ws:"winddir" json:"wind_direction_degrees" homeassistant:"Wind direction,state_class=measurement,unit_of_measurement=°"`
-	WindSpeedMetersPerSecond NullFloat64 `ws:"windspeedmph,conversion=mph_to_meters_per_second" json:"wind_speed_meters_per_second" homeassistant:"Wind speed,state_class=measurement,unit_of_measurement=°"`
-	WindGustMetersPerSecond  NullFloat64 `ws:"windgustmph,conversion=mph_to_meters_per_second" json:"wind_gust_meters_per_second" homeassistant:"Wind gust,state_class=measurement,unit_of_measurement=°"`
+	WindSpeedMetersPerSecond NullFloat64 `ws:"windspeedmph,conversion=mph_to_meters_per_second" json:"wind_speed_meters_per_second" homeassistant:"Wind speed,state_class=measurement,unit_of_measurement=m/s"`
+	WindGustMetersPerSecond  NullFloat64 `ws:"windgustmph,conversion=mph_to_meters_per_second" json:"wind_gust_meters_per_second" homeassistant:"Wind gust,state_class=measurement,unit_of_measurement=m/s"`
 
 	HourlyRainMillimeters  NullFloat64 `ws:"rainin,conversion=inches_of_rain_to_millimeter" json:"hourly_rain_millimeters" homeassistant:"Hourly rain,unit_of_measurement=mm"`
 	DailyRainMillimeters   NullFloat64 `ws:"dailyrainin,conversion=inches_of_rain_to_millimeter" json:"daily_rain_millimeters" homeassistant:"Daily rain,unit_of_measurement=mm"`
