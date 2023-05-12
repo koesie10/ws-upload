@@ -11,21 +11,21 @@ You can use the WSView Plus app to set up your  weather station to upload data t
 below.
 
 1. Install the WSView Plus app.
-  - [Play Store](https://play.google.com/store/apps/details?id=com.ost.wsautool)
-  - [App Store](https://apps.apple.com/app/wsview-plus/id1581353359)
-1. Open the app and connect to your weather station.
-2. Select *Customized* in the menu.
-3. Select *Enable*.
-4. Enter the server IP/hostname where ws-upload is running.
-5. Enter the path `/api/v1/observe?` (including the final question mark).
-6. Enter a station ID. This is an arbitrary string that identifies your weather station. It is used to create the
+    - [Play Store](https://play.google.com/store/apps/details?id=com.ost.wsautool)
+    - [App Store](https://apps.apple.com/app/wsview-plus/id1581353359)
+2. Open the app and connect to your weather station.
+3. Select *Customized* in the menu.
+4. Select *Enable*.
+5. Enter the server IP/hostname where ws-upload is running.
+6. Enter the path `/api/v1/observe?` (including the final question mark).
+7. Enter a station ID. This is an arbitrary string that identifies your weather station. It is used to create the
    measurement name in InfluxDB. You can use the name of your weather station, for example.
-7. Enter a station key. This is an arbitrary string that is used to authenticate your weather station. This should be
+8. Enter a station key. This is an arbitrary string that is used to authenticate your weather station. This should be
    as secure as a password. You can use a password generator to create a random string. You will need this key later to
    configure ws-upload.
-8. Enter the port where ws-upload is running. The default port is 9108.
-9. Set an upload interval
-10. Click on *Save*.
+9. Enter the port where ws-upload is running. The default port is 9108.
+10. Set an upload interval
+11. Click on *Save*.
 
 <details>
 <summary>Older instructions for WS View or WS Tool</summary>
