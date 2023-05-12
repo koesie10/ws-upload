@@ -8,7 +8,7 @@ import (
 	"github.com/fatih/structtag"
 	"github.com/koesie10/ws-upload/wsupload"
 	"github.com/koesie10/ws-upload/x"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type homeAssistantDevice struct {
@@ -58,7 +58,7 @@ func (p *publisher) publishDiscovery() error {
 		}
 		homeAssistantTag, err := tag.Get("homeassistant")
 		if err != nil {
-			logrus.Warnf("Field %s is missing homeassistant tag", field.Name)
+			p.logger.Warn("Field is missing homeassistant tag", zap.String("discovery.field", field.Name))
 			continue
 		}
 
@@ -87,7 +87,7 @@ func (p *publisher) publishDiscovery() error {
 		go func(topic string) {
 			token.Wait()
 			if err := token.Error(); err != nil {
-				logrus.WithError(err).Warn("Failed to publish config %s to MQTT", topic)
+				p.logger.Warn("Failed to publish config to MQTT", zap.String("mqtt.topic", topic), zap.Error(err))
 			}
 		}(topic)
 	}

@@ -9,14 +9,14 @@ import (
 
 	"github.com/fatih/structtag"
 	"github.com/koesie10/ws-upload/x"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 var timeType = reflect.TypeOf(time.Time{})
 var nullFloat64Type = reflect.TypeOf(NullFloat64{})
 var nullInt64Type = reflect.TypeOf(NullInt64{})
 
-func Parse(params url.Values, entry *logrus.Entry) (*Observation, error) {
+func Parse(params url.Values, logger *zap.Logger) (*Observation, error) {
 	obs := Observation{}
 
 	v := reflect.ValueOf(&obs)
@@ -159,17 +159,17 @@ func Parse(params url.Values, entry *logrus.Entry) (*Observation, error) {
 
 		queryValue := params.Get(wsTag.Name)
 		if queryValue == "" {
-			var level = logrus.WarnLevel
+			logWarning := logger.Warn
 			if optional {
-				level = logrus.DebugLevel
+				logWarning = logger.Debug
 			}
 
-			entry.Logf(level, "Missing query param '%s' for field '%s'", wsTag.Name, field.Name)
+			logWarning("Missing query param '%s' for field '%s'", zap.String("parser.query_param", wsTag.Name), zap.String("parser.field", field.Name))
 			continue
 		}
 
 		if err := setFunc(queryValue, fieldValue); err != nil {
-			entry.WithError(err).Errorf("Failed to parse query param '%s' for field '%s' with value %q", wsTag.Name, field.Name, queryValue)
+			logger.Error("Failed to parse query param", zap.String("parser.query_param", wsTag.Name), zap.String("parser.field", field.Name), zap.String("parser.value", queryValue), zap.Error(err))
 			continue
 		}
 	}

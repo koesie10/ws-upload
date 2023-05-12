@@ -22,7 +22,7 @@ builds:
         goarch: arm
       - goos: windows
         goarch: arm64
-    main: .
+    main: ./cmd/ws-upload
     ldflags:
       - -s -w
       - -X github.com/koesie10/ws-upload/version.Version={{.Version}}

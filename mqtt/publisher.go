@@ -8,22 +8,28 @@ import (
 
 	mqttclient "github.com/eclipse/paho.mqtt.golang"
 	"github.com/koesie10/ws-upload/wsupload"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var _ wsupload.Publisher = (*publisher)(nil)
 
 type publisher struct {
 	client mqttclient.Client
+	logger *zap.Logger
 
 	options PublisherOptions
 
 	done chan struct{}
 }
 
-func NewPublisher(options PublisherOptions) (wsupload.Publisher, error) {
+func NewPublisher(logger *zap.Logger, options PublisherOptions) (wsupload.Publisher, error) {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+
 	if options.Debug {
-		setupDebugLogs()
+		setupDebugLogs(logger.With(zap.String("component", "mqtt")))
 	}
 
 	hostname, _ := os.Hostname()
@@ -51,6 +57,7 @@ func NewPublisher(options PublisherOptions) (wsupload.Publisher, error) {
 
 	p := &publisher{
 		client:  client,
+		logger:  logger,
 		options: options,
 
 		done: make(chan struct{}),
@@ -99,7 +106,7 @@ func (p *publisher) Publish(obs *wsupload.Observation) error {
 	go func() {
 		token.Wait()
 		if err := token.Error(); err != nil {
-			logrus.WithError(err).Warn("Failed to publish observation to MQTT")
+			p.logger.Warn("Failed to publish observation to MQTT", zap.Error(err))
 		}
 	}()
 
@@ -118,7 +125,7 @@ func (p *publisher) watchdog() {
 	token.Wait()
 
 	if token.Error() != nil {
-		logrus.WithError(token.Error()).Errorf("Failed to connect to MQTT broker")
+		p.logger.Error("Failed to connect to MQTT broker", zap.Error(token.Error()))
 	}
 
 	discoveryInterval := p.options.HomeAssistant.DiscoveryInterval
@@ -129,10 +136,10 @@ func (p *publisher) watchdog() {
 	t := time.NewTicker(discoveryInterval)
 	defer t.Stop()
 
-	logrus.Infof("Connected to MQTT broker")
+	p.logger.Info("Connected to MQTT broker")
 
 	if err := p.publishDiscovery(); err != nil {
-		logrus.Warnf("Failed to publish discovery message")
+		p.logger.Warn("Failed to publish discovery message", zap.Error(err))
 	}
 
 	for {
@@ -143,40 +150,40 @@ func (p *publisher) watchdog() {
 			return
 		case <-t.C:
 			if err := p.publishDiscovery(); err != nil {
-				logrus.Warnf("Failed to publish discovery message")
+				p.logger.Warn("Failed to publish discovery message", zap.Error(err))
 			}
 		}
 	}
 }
 
-func setupDebugLogs() {
+func setupDebugLogs(baseLogger *zap.Logger) {
 	mqttclient.DEBUG = &logger{
-		level: logrus.TraceLevel,
-		entry: logrus.WithField("system", "mqtt"),
+		level: zapcore.DebugLevel,
+		entry: baseLogger,
 	}
 	mqttclient.WARN = &logger{
-		level: logrus.InfoLevel,
-		entry: logrus.WithField("system", "mqtt"),
+		level: zapcore.InfoLevel,
+		entry: baseLogger,
 	}
 	mqttclient.ERROR = &logger{
-		level: logrus.WarnLevel,
-		entry: logrus.WithField("system", "mqtt"),
+		level: zapcore.WarnLevel,
+		entry: baseLogger,
 	}
 	mqttclient.CRITICAL = &logger{
-		level: logrus.ErrorLevel,
-		entry: logrus.WithField("system", "mqtt"),
+		level: zapcore.ErrorLevel,
+		entry: baseLogger,
 	}
 }
 
 type logger struct {
-	level logrus.Level
-	entry *logrus.Entry
+	level zapcore.Level
+	entry *zap.Logger
 }
 
 func (l *logger) Println(v ...interface{}) {
-	l.entry.Log(l.level, v...)
+	l.entry.Check(l.level, fmt.Sprintf("%v", v)).Write()
 }
 
 func (l *logger) Printf(format string, v ...interface{}) {
-	l.entry.Logf(l.level, format, v...)
+	l.entry.Check(l.level, fmt.Sprintf(format, v...)).Write()
 }

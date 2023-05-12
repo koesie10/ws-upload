@@ -46,7 +46,8 @@ docker run -d \
   -p 9108:9108 \
   -e STATION_PASSWORD=your_station_key \
   --restart unless-stopped \
-  ghcr.io/koesie10/ws-upload:latest
+  ghcr.io/koesie10/ws-upload:latest \
+  server
 ```
 
 Replace `your_station_key` with the station key you entered in the WSView Plus app.
@@ -60,10 +61,14 @@ Binaries are available on the [releases page](https://github.com/koesie10/ws-upl
 All options are available as environment variables and as flags. Flags take precedence over environment variables.
 
 ```
-Usage of ws-upload:
+Usage:
+  ws-upload server [flags]
+
+Flags:
       --addr string                                       the address for the HTTP server to listen on (environment ADDR) (default ":9108")
       --enable-influx-debug                               enable influx debug output (environment ENABLE_INFLUX_DEBUG)
       --enable-json-debug                                 enable json debug output (environment ENABLE_JSON_DEBUG)
+  -h, --help                                              help for server
       --influx-addr string                                InfluxDB HTTP address, set empty to disable (environment INFLUX_ADDR) (default "http://localhost:8086")
       --influx-auth-token string                          InfluxDB auth token, use username:password for InfluxDB 1.8 (environment INFLUX_AUTH_TOKEN)
       --influx-bucket string                              InfluxDB bucket, set to database/retention-policy or database for InfluxDB 1.8 (environment INFLUX_BUCKET) (default "weather")

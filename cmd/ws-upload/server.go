@@ -4,11 +4,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/brpaz/echozap"
 	"github.com/koesie10/pflagenv"
 	"github.com/koesie10/ws-upload/influx"
 	"github.com/koesie10/ws-upload/jsondebug"
@@ -16,11 +17,11 @@ import (
 	"github.com/koesie10/ws-upload/wsupload"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
-var config = struct {
+var serverConfig = struct {
 	Addr string `env:"ADDR" flag:"addr" desc:"the address for the HTTP server to listen on"`
 
 	StationPassword string `env:"STATION_PASSWORD" flag:"station-password,p" desc:"the station password that will be accepted"`
@@ -52,46 +53,33 @@ var config = struct {
 	},
 }
 
-func main() {
-	logrus.SetLevel(logrus.TraceLevel)
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-	logrus.SetOutput(os.Stdout)
+var serverCmd = &cobra.Command{
+	Use:   "server",
+	Short: "Start the ws-upload server",
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := pflagenv.Parse(&serverConfig); err != nil {
+			return err
+		}
 
-	flagSet := pflag.NewFlagSet("ws-upload", pflag.ContinueOnError)
-
-	if err := pflagenv.Setup(flagSet, &config); err != nil {
-		logrus.Fatal(err)
-	}
-
-	if err := pflagenv.Parse(&config); err != nil {
-		logrus.Fatal(err)
-	}
-
-	if err := flagSet.Parse(os.Args); err == pflag.ErrHelp {
-		return
-	} else if err != nil {
-		logrus.Fatal(err)
-	}
-
-	if err := run(); err != nil {
-		logrus.Fatal(err)
-	}
+		return nil
+	},
+	RunE: RunServer,
 }
 
-func run() error {
-	if config.StationPassword == "" {
+func RunServer(cmd *cobra.Command, args []string) error {
+	if serverConfig.StationPassword == "" {
 		key := make([]byte, 8)
 		if _, err := rand.Read(key); err != nil {
 			return err
 		}
 
-		config.StationPassword = hex.EncodeToString(key)
-		logrus.Infof("Station password is %s, please set it using the STATION_PASSWORD environment variable or the --station-password/-p flag", config.StationPassword)
+		serverConfig.StationPassword = hex.EncodeToString(key)
+		logger.Info("Station password has been generated automatically, please set it using the STATION_PASSWORD environment variable or the --station-password/-p flag", zap.String("ws_upload.station_password", serverConfig.StationPassword))
 	}
 
 	var publishers []wsupload.Publisher
 
-	if config.EnableJSONDebug {
+	if serverConfig.EnableJSONDebug {
 		publisher, err := jsondebug.NewDebugPublisher()
 		if err != nil {
 			return fmt.Errorf("failed to create JSON debug publisher: %w", err)
@@ -99,21 +87,21 @@ func run() error {
 		defer publisher.Close()
 		publishers = append(publishers, publisher)
 
-		logrus.Info("JSON debug publisher enabled")
+		logger.Info("JSON debug publisher enabled")
 	}
 
-	if config.Influx.Addr != "" {
-		publisher, err := influx.NewPublisher(config.Influx)
+	if serverConfig.Influx.Addr != "" {
+		publisher, err := influx.NewPublisher(serverConfig.Influx)
 		if err != nil {
 			return fmt.Errorf("failed to create Influx publisher: %w", err)
 		}
 		defer publisher.Close()
 		publishers = append(publishers, publisher)
 
-		logrus.Info("Influx publisher enabled")
+		logger.Info("Influx publisher enabled")
 	}
 
-	if config.EnableInfluxDebug {
+	if serverConfig.EnableInfluxDebug {
 		publisher, err := influx.NewDebugPublisher(influx.DebugPublisherOptions{
 			MeasurementName: "weather",
 		})
@@ -123,21 +111,21 @@ func run() error {
 		defer publisher.Close()
 		publishers = append(publishers, publisher)
 
-		logrus.Info("Influx debug publisher enabled")
+		logger.Info("Influx debug publisher enabled")
 	}
 
-	if len(config.MQTT.Brokers) > 0 {
-		publisher, err := mqtt.NewPublisher(config.MQTT)
+	if len(serverConfig.MQTT.Brokers) > 0 {
+		publisher, err := mqtt.NewPublisher(logger, serverConfig.MQTT)
 		if err != nil {
 			return fmt.Errorf("failed to create MQTT publisher: %w", err)
 		}
 		defer publisher.Close()
 		publishers = append(publishers, publisher)
 
-		logrus.Info("MQTT publisher enabled")
+		logger.Info("MQTT publisher enabled")
 	}
 
-	l, err := net.Listen("tcp", config.Addr)
+	l, err := net.Listen("tcp", serverConfig.Addr)
 	if err != nil {
 		return err
 	}
@@ -146,21 +134,20 @@ func run() error {
 	e.HideBanner = true
 	e.HidePort = true
 	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
+	e.Use(echozap.ZapLogger(logger.With(zap.String("component", "echo"))))
 	e.Use(middleware.RequestID())
-	e.Logger = NewEchoLogger(logrus.WithField("system", "echo"))
 	e.Listener = l
 
 	e.GET("/api/v1/observe", func(c echo.Context) error {
-		entry := logrus.WithFields(logrus.Fields{
-			"scheme":     c.Scheme(),
-			"method":     c.Request().Method,
-			"path":       c.Path(),
-			"remote_ip":  c.RealIP(),
-			"request_Id": c.Response().Header().Get(echo.HeaderXRequestID),
-		})
+		entry := logger.With(
+			zap.String("http.scheme", c.Scheme()),
+			zap.String("http.method", c.Request().Method),
+			zap.String("http.path", c.Path()),
+			zap.String("http.remote_ip", c.RealIP()),
+			zap.String("http.request_id", c.Response().Header().Get(echo.HeaderXRequestID)),
+		)
 
-		if c.QueryParam("PASSWORD") != config.StationPassword {
+		if c.QueryParam("PASSWORD") != serverConfig.StationPassword {
 			return c.String(http.StatusUnauthorized, "Bad password")
 		}
 
@@ -168,20 +155,20 @@ func run() error {
 			return c.String(http.StatusBadRequest, "Invalid action")
 		}
 
-		obs, err := wsupload.Parse(c.QueryParams(), entry)
+		obs, err := wsupload.Parse(c.QueryParams(), logger)
 		if err != nil {
-			entry.WithError(err).Errorf("Failed to parse observation")
+			entry.Error("Failed to parse observation", zap.Error(err))
 			return err
 		}
 
 		if !obs.IndoorTemperatureCelsius.Valid || obs.IndoorTemperatureCelsius.Float64 < -50 || obs.IndoorTemperatureCelsius.Float64 > 80 {
-			entry.Errorf("Invalid indoor temperature")
+			entry.Error("Invalid indoor temperature", zap.Bool("ws_upload.indoor_temperature_celsius_valid", obs.IndoorTemperatureCelsius.Valid), zap.Float64("ws_upload.indoor_temperature_celsius", obs.IndoorTemperatureCelsius.Float64))
 			return c.String(http.StatusOK, "OK")
 		}
 
 		for _, publisher := range publishers {
 			if err := publisher.Publish(obs); err != nil {
-				logrus.WithError(err).Errorf("Failed to publish")
+				entry.Error("Failed to publish observation", zap.Error(err))
 			}
 		}
 
@@ -189,14 +176,22 @@ func run() error {
 	})
 
 	e.POST("/api/v1/mqtt/homeassistant/delete-all-devices", func(c echo.Context) error {
-		if err := mqtt.DeleteAllDevices(config.MQTT); err != nil {
+		if err := mqtt.DeleteAllDevices(serverConfig.MQTT); err != nil {
 			return err
 		}
 
 		return c.String(http.StatusOK, "OK")
 	})
 
-	logrus.Infof("Starting HTTP server on %s", e.Listener.Addr().String())
+	logger.Info("Starting HTTP server", zap.String("net.addr", serverConfig.Addr))
 
-	return e.Start(config.Addr)
+	return e.Start(serverConfig.Addr)
+}
+
+func init() {
+	rootCmd.AddCommand(serverCmd)
+
+	if err := pflagenv.Setup(serverCmd.Flags(), &serverConfig); err != nil {
+		log.Fatal(err)
+	}
 }
