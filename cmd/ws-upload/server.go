@@ -141,7 +141,10 @@ func RunServer(cmd *cobra.Command, args []string) error {
 	e.Use(middleware.RequestID())
 	e.Listener = l
 
-	e.GET("metrics", echo.WrapHandler(promhttp.Handler()))
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
+	e.GET("/health", func(c echo.Context) error {
+		return c.String(http.StatusOK, "OK")
+	})
 
 	e.GET("/api/v1/observe", func(c echo.Context) error {
 		entry := logger.With(
