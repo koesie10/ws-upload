@@ -16,16 +16,17 @@ below.
 2. Open the app and connect to your weather station.
 3. Select *Customized* in the menu.
 4. Select *Enable*.
-5. Enter the server IP/hostname where ws-upload is running.
-6. Enter the path `/api/v1/observe?` (including the final question mark).
-7. Enter a station ID. This is an arbitrary string that identifies your weather station. It is used to create the
+5. Select *Wunderground* for *Protocol Type Same As*.
+6. Enter the server IP/hostname where ws-upload is running.
+7. Enter the path `/api/v1/observe?` (including the final question mark).
+8. Enter a station ID. This is an arbitrary string that identifies your weather station. It is used to create the
    measurement name in InfluxDB. You can use the name of your weather station, for example.
-8. Enter a station key. This is an arbitrary string that is used to authenticate your weather station. This should be
+9. Enter a station key. This is an arbitrary string that is used to authenticate your weather station. This should be
    as secure as a password. You can use a password generator to create a random string. You will need this key later to
    configure ws-upload.
-9. Enter the port where ws-upload is running. The default port is 9108.
-10. Set an upload interval
-11. Click on *Save*.
+10. Enter the port where ws-upload is running. The default port is 9108.
+11. Set an upload interval
+12. Click on *Save*.
 
 <details>
 <summary>Older instructions for WS View or WS Tool</summary>
