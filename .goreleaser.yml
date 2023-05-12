@@ -1,0 +1,40 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - arm
+      - arm64
+      - amd64
+    goarm:
+      - "6"
+      - "7"
+    ignore:
+      - goos: darwin
+        goarch: arm
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+    main: .
+    ldflags:
+      - -s -w
+      - -X github.com/koesie10/ws-upload/version.Version={{.Version}}
+      - -X github.com/koesie10/ws-upload/version.Commit={{.Commit}}
+      - -X github.com/koesie10/ws-upload/version.BuildDate={{.Date}}
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
