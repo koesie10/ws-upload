@@ -3,7 +3,7 @@ module github.com/koesie10/ws-upload
 go 1.20
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.4.1
+	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/fatih/structtag v1.2.0
 	github.com/influxdata/influxdb-client-go/v2 v2.9.0
 	github.com/koesie10/pflagenv v0.1.1
