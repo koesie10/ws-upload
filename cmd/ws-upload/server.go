@@ -176,6 +176,10 @@ func RunServer(cmd *cobra.Command, args []string) error {
 	})
 
 	e.POST("/api/v1/mqtt/homeassistant/delete-all-devices", func(c echo.Context) error {
+		if c.QueryParam("password") != serverConfig.StationPassword {
+			return c.String(http.StatusUnauthorized, "Bad password")
+		}
+
 		if err := mqtt.DeleteAllDevices(serverConfig.MQTT); err != nil {
 			return err
 		}
