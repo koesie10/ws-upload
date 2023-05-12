@@ -2,9 +2,10 @@ package influx
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/koesie10/ws-upload/wsupload"
-	"time"
 )
 
 var _ wsupload.Publisher = (*debugPublisher)(nil)

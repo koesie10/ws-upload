@@ -3,12 +3,13 @@ package jsondebug
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/koesie10/ws-upload/wsupload"
 )
 
 var _ wsupload.Publisher = (*debugPublisher)(nil)
 
-type debugPublisher struct {}
+type debugPublisher struct{}
 
 func NewDebugPublisher() (wsupload.Publisher, error) {
 	return &debugPublisher{}, nil
