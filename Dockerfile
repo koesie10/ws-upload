@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . /app/
 RUN CGO_ENABLED=0 go build -o ws-upload .
 
-FROM alpine
+FROM alpine:3.18.0
 RUN apk --update add ca-certificates
 RUN mkdir /app
 WORKDIR /app
