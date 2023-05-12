@@ -17,8 +17,11 @@ import (
 	"github.com/koesie10/ws-upload/wsupload"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	_ "github.com/koesie10/ws-upload/prometheus"
 )
 
 var serverConfig = struct {
@@ -137,6 +140,8 @@ func RunServer(cmd *cobra.Command, args []string) error {
 	e.Use(echozap.ZapLogger(logger.With(zap.String("component", "echo"))))
 	e.Use(middleware.RequestID())
 	e.Listener = l
+
+	e.GET("metrics", echo.WrapHandler(promhttp.Handler()))
 
 	e.GET("/api/v1/observe", func(c echo.Context) error {
 		entry := logger.With(
