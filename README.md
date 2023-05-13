@@ -94,3 +94,23 @@ Flags:
       --mqtt-username string                              MQTT username (environment MQTT_USERNAME)
   -p, --station-password string                           the station password that will be accepted (environment STATION_PASSWORD)
 ```
+
+### Typical configuration
+
+A typical configuration using environment variables when publishing to both InfluxDB and Home Assistant (via MQTT) might
+look like this:
+
+```dotenv
+INFLUX_ADDR=http://influxdb:8086
+INFLUX_BUCKET=weather
+MQTT_BROKERS=tcp://192.168.123.132:1883
+MQTT_HOMEASSISTANT_DEVICE_IDENTIFIERS=C2:ED:6C:F6:D5:D0
+MQTT_HOMEASSISTANT_DEVICE_MANUFACTURER=Eurochron
+MQTT_HOMEASSISTANT_DEVICE_MODEL=WH2900
+MQTT_HOMEASSISTANT_DEVICE_NAME=Weather Station
+MQTT_HOMEASSISTANT_DISCOVERY_INTERVAL=5m
+MQTT_HOMEASSISTANT_UNIQUE_ID_PREFIX=wh2900_
+MQTT_USERNAME=your_mqtt_username
+MQTT_PASSWORD=your_mqtt_password
+STATION_PASSWORD=your_station_key
+```
