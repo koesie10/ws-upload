@@ -6,7 +6,7 @@ type Observation struct {
 	StationID    string `ws:"ID" json:"station_id" influx:"station_id,tag" homeassistant:"Station ID"`
 	SoftwareType string `ws:"softwaretype" json:"software_type" homeassistant:"Software type"`
 
-	ObservationTime time.Time `ws:"dateutc,layout=2006-01-02 15:04:05,location=UTC" json:"observation_time" influx:"ts" homeassistant:"Observation time,device_class=timestamp,unit_of_measurement=ISO8601"`
+	ObservationTime time.Time `ws:"dateutc,layout=2006-01-02 15:04:05,location=UTC" json:"observation_time" influx:"ts" homeassistant:"Observation time,device_class=timestamp"`
 
 	OutsideTemperatureCelsius NullFloat64 `ws:"tempf,conversion=fahrenheit_to_celsius" json:"outside_temperature_celsius" homeassistant:"Outside temperature,device_class=temperature,unit_of_measurement=°C,state_class=measurement"`
 	IndoorTemperatureCelsius  NullFloat64 `ws:"indoortempf,conversion=fahrenheit_to_celsius" json:"indoor_temperature_celsius" homeassistant:"Indoor temperature,device_class=temperature,unit_of_measurement=°C,state_class=measurement"`
