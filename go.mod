@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/brpaz/echozap v1.1.3
-	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/fatih/structtag v1.2.0
 	github.com/influxdata/influxdb-client-go/v2 v2.12.3
 	github.com/koesie10/pflagenv v0.1.1
