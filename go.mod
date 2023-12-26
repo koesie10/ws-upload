@@ -10,7 +10,7 @@ require (
 	github.com/koesie10/pflagenv v0.1.1
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/prometheus/client_golang v1.16.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	go.uber.org/zap v1.24.0
 )
 
