@@ -1,6 +1,6 @@
 module github.com/koesie10/ws-upload
 
-go 1.20
+go 1.21
 
 require (
 	github.com/brpaz/echozap v1.1.3
