@@ -146,7 +146,7 @@ func RunServer(cmd *cobra.Command, args []string) error {
 		return c.String(http.StatusOK, "OK")
 	})
 
-	e.GET("/api/v1/observe", func(c echo.Context) error {
+	observeHandler := func(c echo.Context) error {
 		entry := logger.With(
 			zap.String("http.scheme", c.Scheme()),
 			zap.String("http.method", c.Request().Method),
@@ -181,7 +181,10 @@ func RunServer(cmd *cobra.Command, args []string) error {
 		}
 
 		return c.String(http.StatusOK, "OK")
-	})
+	}
+
+	e.GET("/api/v1/observe", observeHandler)
+	e.GET("/weatherstation/updateweatherstation.php", observeHandler)
 
 	e.POST("/api/v1/mqtt/homeassistant/delete-all-devices", func(c echo.Context) error {
 		if c.QueryParam("password") != serverConfig.StationPassword {
