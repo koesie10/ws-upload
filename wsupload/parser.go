@@ -96,6 +96,11 @@ func Parse(params url.Values, logger *zap.Logger) (*Observation, error) {
 				}
 
 				setFunc = func(value string, fieldValue reflect.Value) error {
+					if value == "now" {
+						fieldValue.Set(reflect.ValueOf(time.Now()))
+						return nil
+					}
+
 					t, err := time.ParseInLocation(layout, value, location)
 					if err != nil {
 						return fmt.Errorf("failed to parse date: %w", err)
@@ -164,7 +169,7 @@ func Parse(params url.Values, logger *zap.Logger) (*Observation, error) {
 				logWarning = logger.Debug
 			}
 
-			logWarning("Missing query param '%s' for field '%s'", zap.String("parser.query_param", wsTag.Name), zap.String("parser.field", field.Name))
+			logWarning("Missing query param for field", zap.String("parser.query_param", wsTag.Name), zap.String("parser.field", field.Name))
 			continue
 		}
 

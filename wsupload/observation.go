@@ -19,7 +19,7 @@ type Observation struct {
 	RelativeAtmosphericPressurePascal NullFloat64 `ws:"baromin,conversion=inches_of_mercury_to_pascal" json:"relative_atmospheric_pressure_pascal" homeassistant:"Relative atmospheric pressure,device_class=pressure,unit_of_measurement=Pa,state_class=measurement"`
 	AbsoluteAtmosphericPressurePascal NullFloat64 `ws:"absbaromin,conversion=inches_of_mercury_to_pascal" json:"absolute_atmospheric_pressure_pascal" homeassistant:"Absolute atmospheric pressure,device_class=pressure,unit_of_measurement=Pa,state_class=measurement"`
 
-	UVIndex                           NullInt64   `ws:"UV" json:"uv_index" homeassistant:"UV index,state_class=measurement,unit_of_measurement=UV"`
+	UVIndex                           NullFloat64 `ws:"UV" json:"uv_index" homeassistant:"UV index,state_class=measurement,unit_of_measurement=UV"`
 	SolarRadiationWattPerMeterSquared NullFloat64 `ws:"solarradiation" json:"solar_radiation_watt_per_meter_squared" homeassistant:"Solar radiation,state_class=measurement,unit_of_measurement=W/m^2"`
 
 	WindDirectionDegrees     NullInt64   `ws:"winddir" json:"wind_direction_degrees" homeassistant:"Wind direction,state_class=measurement,unit_of_measurement=°"`
