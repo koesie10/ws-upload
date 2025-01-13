@@ -159,7 +159,7 @@ func RunServer(cmd *cobra.Command, args []string) error {
 			return c.String(http.StatusUnauthorized, "Bad password")
 		}
 
-		if c.QueryParam("action") != "updateraw" {
+		if c.QueryParam("action") != "updateraw" && c.QueryParam("action") != "updateraww" {
 			return c.String(http.StatusBadRequest, "Invalid action")
 		}
 
